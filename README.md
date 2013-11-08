@@ -1,54 +1,59 @@
-# Significant terms plugin for Elasticsearch
+# Saved Queries plugin for Elasticsearch
 
 
 ## Overview
 
-The significant terms plugin analyses search results and identifies words or phrases that are *significant* (as opposed to merely popular). 
-In a search for *"bird flu"* the plugin may suggest *"H5n1"* as a significant term (or vice-versa). 
-The term *H5n1* would be suggested as significant even if it is mentioned say only 3 times in the top 100 search results - if it only evers occurs 4 times in a corpus of 10 million docs it is highly likely that it is pertinent.
+The saved query plugin adds a new "saved" query clause to the ElasticSearch query syntax. This allows previously saved queries to inserted into the current query to allow for modular query definitions.
+Saved queries can themselves reference other saved queries allowing for taxonomy-like trees to be used.
+
 
 ### Syntax
-The plugin is written as a facet:
+Example use:
 
-	"query" :
+I might refer to an organisation by name:
+
+	"query":{
+		"saved":{"name":"IRA"}
+	}
+
+Which is defined in a stored doc as:
+
 	{
-		 "query_string" : {
-		     	    "query" : "\"bird flu\""
-    	}
-   	},
-   	"facets" : {
-	        "significant":{
-	                    "significantTerms":{
-		                    "analyzeField":"Body",
-		                    "numTopPhrasesToReturn":10,
-		                    "numTopTermsToReturn":20
-		                    }
-		     }
+		"bool":{
+			"should":[
+				{"saved":{"name":"CIRA"}},
+				{"saved":{"name":"RIRA"}},
+				{"saved":{"name":"PIRA"}},
+				{"query_string":{"query":"IRA"}}
+				
+				]
+		}
 	} 
 	
-Results are of the form:
+And the referenced "CIRA" sub-organization may be further defined in a saved "leaf" query as follows:
 
-	"significant": {
-			"_type": "significantTerms",
-			"terms": [
-				{
-					"significance": 0.26,
-					"sampleDf": 3,
-					"term": "h5n1",
-					"corpusDf": 4
-				}...
-			],
-			"phrases": [
-				{
-					"terms": [
-						"avian",
-						"flu"
-					],
-					"popularity": 6
-				},
+	{
+		"query_string":{
+			"query":"\"Continuity Irish Republican Army\" CIRA "
+		}
+	}
+	
+The "saved" query parser tag automatically loads all of these nested elements. At query-parse time.
+
+### Beyond purely hierarchical taxonomies
+Rather than nesting queries by referring to them individually by name it is also possible to add tags to saved queries e.g. "entertainment" and then pull in all query definitions with a tag like so:
+
+	"query":{
+		"saved":{"tags":["entertainment,showbiz"]}
+	}
+
+All matching saved queries are loaded into a Boolean query as SHOULD clauses to OR them.
+This overcomes the issue of each concept being tied to a single branch of a tree.
+
+
 		
 ### Next?
 
-This is currently functional but being re-developed using the new aggregations API.
+Need to package up the taxonomy editor for editing and saving queries. For now use the script in src/test/resources to create some example saved queries
 
 Mark Harwood

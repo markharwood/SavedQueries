@@ -45,6 +45,9 @@ import org.elasticsearch.search.SearchHit;
  *      * Query Caching
  *      * Parameterised query templates and template engine
  *      * Customisable index name for query store (allow for multiples?)
+ *      * TODO change syntax to allow for an arbitrary nested query to select savedqueries to load
+ *        - would offer more flexibilty e.g. saved queries might have owner or time-period fields
+ *        that control who can run queries or when. 
  *      
  * 
  */
